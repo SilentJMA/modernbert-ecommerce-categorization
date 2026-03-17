@@ -91,18 +91,3 @@ Try these changes:
 1. Reduce `MAX_TRAIN_SAMPLES`.
 2. Reduce `TRAIN_BATCH_SIZE`.
 3. Reconnect and restart from the tokenization/training section.
-
-## Documentation style notes
-
-This README is written to follow Digital.gov documentation guidance:
-- Plain language and short sentences.
-- Task-first headings and clear action steps.
-- Scannable structure with concise lists.
-
-References:
-- [Digital.gov style guide](https://digital.gov/style-guide)
-- [PlainLanguage.gov guidelines](https://www.plainlanguage.gov/guidelines/)
-
-## Repository
-
-- GitHub: [modernbert-ecommerce-categorization](https://github.com/SilentJMA/modernbert-ecommerce-categorization)
