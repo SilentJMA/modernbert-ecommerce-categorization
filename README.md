@@ -1,36 +1,40 @@
-# Fine-tune ModernBERT for e-commerce product categorization
+# Fine-tune ModernBERT for E-commerce Product Categorization
 
-Train a text classifier that predicts product categories from title, brand, and description.
+Train a text classifier that predicts top-level product categories from title, brand, and description.
 
-This project uses:
-- Base model: `answerdotai/ModernBERT-base`
-- Dataset: `Shopify/product-catalogue`
-- Task: top-level product taxonomy classification
-- Environment: Google Colab (free tier works with T4 GPU)
+## Overview
 
-## Start here
+This project fine-tunes a transformer model for e-commerce taxonomy prediction.
+
+- Base model: [`answerdotai/ModernBERT-base`](https://huggingface.co/answerdotai/ModernBERT-base)
+- Dataset: [`Shopify/product-catalogue`](https://huggingface.co/datasets/Shopify/product-catalogue)
+- Task: top-level product category classification
+- Runtime: Google Colab (`T4 GPU` on free tier)
+
+## Start Here
 
 1. Open `modernbert_ecommerce_product_categorization.ipynb` in Google Colab.
 2. Set runtime to `Python 3` + `T4 GPU`.
 3. Run all cells in order.
-4. Check `eval_accuracy`, `eval_f1_macro`, and `eval_f1_weighted`.
+4. Review `eval_accuracy`, `eval_f1_macro`, and `eval_f1_weighted`.
 
-## Project file
+## Project File
 
-- `modernbert_ecommerce_product_categorization.ipynb`: full workflow for data prep, training, evaluation, and inference.
+- `modernbert_ecommerce_product_categorization.ipynb`: end-to-end workflow for preprocessing, training, evaluation, and inference.
 
-## What the notebook does
+## Notebook Workflow
 
-1. Loads Shopify product data from Hugging Face.
-2. Builds model input from `title + brand + description`.
-3. Converts taxonomy paths to top-level categories.
-4. Encodes labels and tokenizes text.
-5. Fine-tunes `ModernBERT` for sequence classification.
-6. Uses macro-F1-focused training settings.
-7. Evaluates with accuracy/F1 + class report + confusion matrix.
-8. Runs sample predictions and saves model artifacts.
+1. Load dataset from Hugging Face.
+2. Build training text from product title, brand, and description.
+3. Convert taxonomy paths to top-level labels.
+4. Tokenize text and encode labels.
+5. Fine-tune `ModernBERT` for sequence classification.
+6. Evaluate with accuracy and F1 metrics.
+7. Generate class report + confusion matrix.
+8. Run custom product predictions.
+9. Save model artifacts.
 
-## Current training defaults (macro-F1 oriented)
+## Training Setup (Macro-F1 Focused)
 
 - `MAX_LENGTH = 256`
 - `LEARNING_RATE = 1e-5`
@@ -40,16 +44,16 @@ This project uses:
 - `WEIGHT_DECAY = 0.05`
 - `WARMUP_RATIO = 0.1`
 - `EARLY_STOPPING_PATIENCE = 2`
-- Class-weighted cross-entropy loss for label imbalance
+- Class-weighted cross-entropy loss
 - Cosine learning-rate schedule
 
-Sampling controls for faster Colab iteration:
-- `MAX_TRAIN_SAMPLES = 30000` (set `None` for full train split)
-- `MAX_EVAL_SAMPLES = 8000` (set `None` for full eval split)
+Sampling controls (for faster Colab iterations):
+- `MAX_TRAIN_SAMPLES = 30000` (`None` for full train split)
+- `MAX_EVAL_SAMPLES = 8000` (`None` for full eval split)
 
-## Latest evaluation snapshot
+## Latest Evaluation Snapshot
 
-From your recent run (`8000` eval samples):
+Recent run on `8000` eval samples:
 - `eval_loss: 1.0604`
 - `eval_accuracy: 0.7318`
 - `eval_f1_macro: 0.5506`
@@ -62,26 +66,25 @@ Example predictions:
 
 ## Outputs
 
-After training, artifacts are saved to:
+Trained artifacts are saved to:
 - `./modernbert-ecommerce-topcat`
 
-This folder contains model weights, config, and tokenizer files.
+This folder includes model weights, config, and tokenizer files.
 
-## Optional publishing
+## Optional: Publish to Hugging Face Hub
 
-To push model artifacts to Hugging Face Hub:
-1. Uncomment login/push lines in the last notebook cell.
+1. Uncomment login and push lines in the last notebook cell.
 2. Authenticate with your Hugging Face account.
 3. Run that cell.
 
-## Runtime guidance
+## Runtime Guidance
 
 For Colab free tier:
 - Use `T4 GPU`.
 - Avoid CPU for full training runs.
 - Avoid TPU unless you refactor for TPU/XLA.
 
-If memory is tight, lower `TRAIN_BATCH_SIZE` first.
+If memory is limited, reduce `TRAIN_BATCH_SIZE` first.
 
 ## Troubleshooting
 
@@ -92,10 +95,10 @@ Use `eval_strategy="epoch"`.
 Remove `tokenizer=tokenizer` from `Trainer(...)`.
 
 ### `RuntimeError: on_train_begin must be called before on_evaluate`
-Notebook callback state issue. Remove `NotebookProgressCallback` and retry evaluate (already patched in the notebook).
+Remove `NotebookProgressCallback` and retry evaluation (already patched in notebook).
 
-### `UndefinedMetricWarning` from sklearn classification report
-Some rare classes have no predicted samples in that run. This is expected with extreme class imbalance. It mainly affects macro metrics.
+### `UndefinedMetricWarning` in sklearn report
+Some rare classes may have no predicted samples in a run. This is expected under heavy class imbalance and mainly impacts macro metrics.
 
 ### Colab disconnects during training
 1. Reduce `MAX_TRAIN_SAMPLES`.
