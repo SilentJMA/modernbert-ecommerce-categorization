@@ -10,84 +10,94 @@ This project uses:
 
 ## Start here
 
-If you want the fastest path:
 1. Open `modernbert_ecommerce_product_categorization.ipynb` in Google Colab.
 2. Set runtime to `Python 3` + `T4 GPU`.
 3. Run all cells in order.
-4. Review `accuracy`, `f1_macro`, and `f1_weighted` in the evaluation cells.
-
-## What problem this solves
-
-Many product catalogs have inconsistent category labels. This notebook gives you a repeatable way to:
-- Standardize category assignment.
-- Reduce manual categorization time.
-- Produce a model you can reuse for bulk or real-time labeling.
-
-## Why this model
-
-`answerdotai/ModernBERT-base` is a strong fit because:
-- It is an encoder model, which is ideal for supervised classification.
-- It supports longer context than older BERT-style models.
-- It is efficient enough to fine-tune on limited GPU resources.
+4. Check `eval_accuracy`, `eval_f1_macro`, and `eval_f1_weighted`.
 
 ## Project file
 
-- `modernbert_ecommerce_product_categorization.ipynb`: complete workflow for setup, training, evaluation, and prediction.
+- `modernbert_ecommerce_product_categorization.ipynb`: full workflow for data prep, training, evaluation, and inference.
 
-## How the notebook works
+## What the notebook does
 
-The notebook follows this flow:
-1. Install dependencies.
-2. Load Shopify dataset from Hugging Face.
-3. Build one text field from product title, brand, and description.
-4. Convert hierarchical category paths to top-level labels.
-5. Tokenize text with `AutoTokenizer`.
-6. Fine-tune `AutoModelForSequenceClassification`.
-7. Evaluate with accuracy and F1.
-8. Run sample predictions.
-9. Save model artifacts locally.
+1. Loads Shopify product data from Hugging Face.
+2. Builds model input from `title + brand + description`.
+3. Converts taxonomy paths to top-level categories.
+4. Encodes labels and tokenizes text.
+5. Fine-tunes `ModernBERT` for sequence classification.
+6. Uses macro-F1-focused training settings.
+7. Evaluates with accuracy/F1 + class report + confusion matrix.
+8. Runs sample predictions and saves model artifacts.
 
-## Runtime and compute guidance
+## Current training defaults (macro-F1 oriented)
 
-For Google Colab free tier:
-- Choose `T4 GPU`.
-- Do not use CPU for full training unless you only test a very small sample.
-- Do not use TPU unless you plan to refactor for TPU/XLA.
-
-Current default config in notebook:
 - `MAX_LENGTH = 256`
-- `NUM_EPOCHS = 3`
+- `LEARNING_RATE = 1e-5`
+- `NUM_EPOCHS = 5`
 - `TRAIN_BATCH_SIZE = 16`
 - `EVAL_BATCH_SIZE = 32`
-- `MAX_TRAIN_SAMPLES = 30000` (set to `None` for full train split)
-- `MAX_EVAL_SAMPLES = 8000` (set to `None` for full test split)
+- `WEIGHT_DECAY = 0.05`
+- `WARMUP_RATIO = 0.1`
+- `EARLY_STOPPING_PATIENCE = 2`
+- Class-weighted cross-entropy loss for label imbalance
+- Cosine learning-rate schedule
 
-If Colab runs out of memory, lower `TRAIN_BATCH_SIZE` first.
+Sampling controls for faster Colab iteration:
+- `MAX_TRAIN_SAMPLES = 30000` (set `None` for full train split)
+- `MAX_EVAL_SAMPLES = 8000` (set `None` for full eval split)
+
+## Latest evaluation snapshot
+
+From your recent run (`8000` eval samples):
+- `eval_loss: 1.0604`
+- `eval_accuracy: 0.7318`
+- `eval_f1_macro: 0.5506`
+- `eval_f1_weighted: 0.7298`
+
+Example predictions:
+- `Apple iPhone 15 Pro Max...` -> `Electronics` (`0.997`)
+- `Stainless Steel Non-Stick Frying Pan...` -> `Home & Garden` (`0.999`)
+- `Organic Dry Cat Food...` -> `Animals & Pet Supplies` (`0.999`)
 
 ## Outputs
 
 After training, artifacts are saved to:
 - `./modernbert-ecommerce-topcat`
 
-Saved files include model weights, config, and tokenizer files needed for reuse.
+This folder contains model weights, config, and tokenizer files.
 
 ## Optional publishing
 
-You can publish the fine-tuned model to Hugging Face Hub:
-1. Uncomment the login and `push_to_hub` lines in the last notebook cell.
+To push model artifacts to Hugging Face Hub:
+1. Uncomment login/push lines in the last notebook cell.
 2. Authenticate with your Hugging Face account.
-3. Run the upload cell.
+3. Run that cell.
+
+## Runtime guidance
+
+For Colab free tier:
+- Use `T4 GPU`.
+- Avoid CPU for full training runs.
+- Avoid TPU unless you refactor for TPU/XLA.
+
+If memory is tight, lower `TRAIN_BATCH_SIZE` first.
 
 ## Troubleshooting
 
-### Error: `TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'`
-Use `eval_strategy="epoch"` instead of `evaluation_strategy="epoch"`.
+### `TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'`
+Use `eval_strategy="epoch"`.
 
-### Error: `Trainer.__init__() got an unexpected keyword argument 'tokenizer'`
-Remove the `tokenizer=tokenizer` argument from `Trainer(...)`.
+### `Trainer.__init__() got an unexpected keyword argument 'tokenizer'`
+Remove `tokenizer=tokenizer` from `Trainer(...)`.
 
-### Runtime disconnects during training
-Try these changes:
+### `RuntimeError: on_train_begin must be called before on_evaluate`
+Notebook callback state issue. Remove `NotebookProgressCallback` and retry evaluate (already patched in the notebook).
+
+### `UndefinedMetricWarning` from sklearn classification report
+Some rare classes have no predicted samples in that run. This is expected with extreme class imbalance. It mainly affects macro metrics.
+
+### Colab disconnects during training
 1. Reduce `MAX_TRAIN_SAMPLES`.
 2. Reduce `TRAIN_BATCH_SIZE`.
-3. Reconnect and restart from the tokenization/training section.
+3. Reconnect and rerun from tokenization/training cells.
